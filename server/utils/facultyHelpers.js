@@ -1,0 +1,59 @@
+import Faculty from "../models/facultySchema.js";
+import Project from "../models/projectSchema.js";
+
+/**
+ * Extract primary school and program from faculty
+ */
+export function extractPrimaryContext(faculty) {
+  const school = Array.isArray(faculty.school)
+    ? faculty.school[0]
+    : faculty.school;
+
+  const program = Array.isArray(faculty.program)
+    ? faculty.program[0]
+    : faculty.program;
+
+  return { school, program };
+}
+
+/**
+ * Determine faculty type for a project (guide or panel)
+ */
+export async function getFacultyTypeForProject(facultyId, projectId) {
+  const project = await Project.findById(projectId).populate("panel");
+
+  if (!project) {
+    throw new Error("Project not found.");
+  }
+
+  // Check if guide
+  if (project.guideFaculty?.toString() === facultyId.toString()) {
+    return { facultyType: "guide", project };
+  }
+
+  // Check if panel member
+  const isPanelMember = project.panel?.members?.some(
+    (m) => m.faculty.toString() === facultyId.toString()
+  );
+
+  if (isPanelMember) {
+    return { facultyType: "panel", project };
+  }
+
+  throw new Error("You are not assigned to this project.");
+}
+
+/**
+ * Extract school/program arrays from faculty for broadcast matching
+ */
+export function getFacultyAudience(faculty) {
+  const schools = Array.isArray(faculty.school)
+    ? faculty.school
+    : [faculty.school];
+
+  const programs = Array.isArray(faculty.program)
+    ? faculty.program
+    : [faculty.program];
+
+  return { schools, programs };
+}
