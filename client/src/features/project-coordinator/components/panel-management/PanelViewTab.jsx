@@ -39,6 +39,9 @@ const PanelViewTab = ({ isPrimary = false }) => {
   const fetchPanels = useCallback(async () => {
     try {
       setLoading(true);
+      console.log("PanelViewTab: Fetching panels...");
+      console.log("PanelViewTab: User context:", user);
+      console.log("PanelViewTab: Filters:", filters);
 
       const response = await apiFetchPanels({
         school: user?.school,
@@ -46,16 +49,21 @@ const PanelViewTab = ({ isPrimary = false }) => {
         academicYear: filters?.academicYear,
       });
 
+      console.log("PanelViewTab: API Response:", response);
+
       if (response.success) {
         setPanels(response.panels || []);
         showToast(`Loaded ${response.panels?.length || 0} panels`, "success");
       } else {
+        console.warn("PanelViewTab: Response success is false", response);
         showToast(response.message || "Failed to load panels", "error");
       }
     } catch (error) {
       console.error("Error fetching panels:", error);
+      // Log the full error object to console
+      console.dir(error);
       showToast(
-        error.response?.data?.message || "Failed to load panels",
+        error.response?.data?.message || error.message || "Failed to load panels",
         "error"
       );
     } finally {

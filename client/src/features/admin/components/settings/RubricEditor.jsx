@@ -55,6 +55,11 @@ const RubricEditor = ({ component, onSave, onCancel }) => {
       return;
     }
 
+    if (!subComponentData.weight || subComponentData.weight <= 0) {
+      alert('Please enter a valid weight (greater than 0)');
+      return;
+    }
+
     let updatedSubs;
     if (editingSubIndex !== null) {
       updatedSubs = formData.predefinedSubComponents.map((s, i) =>
@@ -81,6 +86,18 @@ const RubricEditor = ({ component, onSave, onCancel }) => {
 
     if (!formData.name.trim()) {
       alert('Please enter a component name');
+      return;
+    }
+
+    if (!formData.suggestedWeight || formData.suggestedWeight <= 0) {
+      alert('Please enter a valid suggested weight (greater than 0)');
+      return;
+    }
+
+    // Check if suggested weight is less than any sub-component weight
+    const maxSubWeight = Math.max(...formData.predefinedSubComponents.map(s => s.weight || 0), 0);
+    if (formData.predefinedSubComponents.length > 0 && formData.suggestedWeight < maxSubWeight) {
+      alert(`Suggested weight (${formData.suggestedWeight}) cannot be less than the highest sub-component weight (${maxSubWeight})`);
       return;
     }
 
@@ -141,7 +158,7 @@ const RubricEditor = ({ component, onSave, onCancel }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Weight
+                Weight <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -149,6 +166,7 @@ const RubricEditor = ({ component, onSave, onCancel }) => {
                 onChange={(e) => setSubComponentData({ ...subComponentData, weight: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                 min="0"
                 step="0.1"
+                required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -219,7 +237,7 @@ const RubricEditor = ({ component, onSave, onCancel }) => {
               </label>
               <Select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, category: value })}
                 options={categories.map(cat => ({ value: cat, label: cat }))}
               />
             </div>
@@ -239,7 +257,7 @@ const RubricEditor = ({ component, onSave, onCancel }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Suggested Weight
+                Suggested Weight <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -247,6 +265,7 @@ const RubricEditor = ({ component, onSave, onCancel }) => {
                 onChange={(e) => setFormData({ ...formData, suggestedWeight: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                 min="0"
                 step="0.1"
+                required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <p className="text-xs text-gray-500 mt-1">Suggested weightage for this component in marking schema</p>

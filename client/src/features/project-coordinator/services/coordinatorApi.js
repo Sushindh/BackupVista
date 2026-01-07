@@ -1,8 +1,7 @@
 // src/features/project-coordinator/services/coordinatorApi.js
 import api from "../../../services/api";
-import demoApi from "../../../shared/utils/demoApi";
-
-const { isDemoMode } = demoApi;
+import * as demoApi from "../../../shared/utils/demoApi";
+import { isDemoMode } from "../../../shared/utils/demoApi";
 
 /**
  * Project Coordinator API Service
@@ -80,18 +79,27 @@ const adaptProject = (backendProject) => {
 
 const adaptPanel = (backendPanel) => {
   if (!backendPanel) return null;
+  const members = backendPanel.members?.map((m) => ({
+    _id: m.faculty?._id || m._id,
+    employeeId: m.faculty?.employeeId || m.employeeId,
+    name: m.faculty?.name || m.name,
+    email: m.faculty?.emailId || m.email,
+  })) || [];
+
   return {
     _id: backendPanel._id,
-    members: backendPanel.members?.map((m) => ({
-      _id: m.faculty?._id || m._id,
-      employeeId: m.faculty?.employeeId || m.employeeId,
-      name: m.faculty?.name || m.name,
-    })) || [],
+    id: backendPanel._id, // Ensure id is also present
+    members: members,
+    faculty: members, // Alias for UI components expecting 'faculty'
+    panelNumber: backendPanel.panelName?.split('-').pop() || backendPanel._id, // Extract number from name
+    panelName: backendPanel.panelName,
     academicYear: backendPanel.academicYear,
     school: backendPanel.school,
     department: backendPanel.department,
     isActive: backendPanel.isActive !== false,
     assignedProjects: backendPanel.assignedProjects || 0,
+    teams: backendPanel.projects || [], // Add projects/teams if available
+    markingStatus: backendPanel.markingStatus || 'none'
   };
 };
 
@@ -241,15 +249,31 @@ export const fetchProjectMarks = async (projectId) => {
 // ==================== Panel Management APIs ====================
 
 export const fetchPanels = async (filters = {}) => {
-  if (isDemoMode()) return demoApi.demoFetchPanels(filters);
-  const response = await api.get("/coordinator/panels", { params: filters });
-  if (response.data.success) {
-    return {
-      success: true,
-      panels: response.data.data.map(adaptPanel),
-    };
+  try {
+    if (isDemoMode()) {
+      console.log('Fetching panels in demo mode');
+      const result = await demoApi.demoFetchPanels(filters);
+
+      if (result.success && result.panels) {
+        return {
+          success: true,
+          panels: result.panels.map(adaptPanel)
+        };
+      }
+      return result;
+    }
+    const response = await api.get("/coordinator/panels", { params: filters });
+    if (response.data.success) {
+      return {
+        success: true,
+        panels: response.data.data.map(adaptPanel),
+      };
+    }
+    return response.data;
+  } catch (error) {
+    console.error("Error in fetchPanels:", error);
+    throw error;
   }
-  return response.data;
 };
 
 export const createPanel = async (panelData) => {
