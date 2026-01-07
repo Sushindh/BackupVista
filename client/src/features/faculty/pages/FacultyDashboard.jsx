@@ -62,7 +62,7 @@ const FacultyDashboard = () => {
     // Workflow State
 
     // Workflow State
-    const [isInitialized, setIsInitialized] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(true);
 
     // Marking Workflow State
     const [isMarkingOpen, setIsMarkingOpen] = useState(false);

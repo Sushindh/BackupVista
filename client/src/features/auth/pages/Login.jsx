@@ -6,6 +6,7 @@ import Button from '../../../shared/components/Button';
 import Input from '../../../shared/components/Input';
 import Card from '../../../shared/components/Card';
 import { useToast } from '../../../shared/hooks/useToast';
+import { DEFAULT_CREDENTIALS } from '../../../shared/data/dummyData';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [loginResult, setLoginResult] = useState(null);
-  const { login } = useAuth();
+  const { login, isDemoMode } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -28,14 +29,14 @@ const Login = () => {
 
     try {
       const result = await login({ email, password });
-      
+
       console.log('Login result:', result);
       console.log('User data:', result.user);
       console.log('isProjectCoordinator:', result.user.isProjectCoordinator);
       console.log('Role:', result.user.role);
-      
+
       showToast('Login successful!', 'success');
-      
+
       // Check if user is both faculty and project coordinator
       if (result.user.role === 'faculty' && result.user.isProjectCoordinator) {
         // Show role selection modal
@@ -45,7 +46,7 @@ const Login = () => {
         setLoading(false);
         return;
       }
-      
+
       // Direct routing for other roles
       if (result.user.role === 'admin') {
         navigate('/admin');
@@ -72,19 +73,45 @@ const Login = () => {
     }
   };
 
+  const handleQuickLogin = (cred) => {
+    setEmail(cred.email);
+    setPassword(cred.password);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
           Faculty Evaluation Portal
         </h1>
-        
+
+        {/* Demo Mode Banner */}
+        {isDemoMode && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800 font-medium mb-2">🎮 Demo Mode Active</p>
+            <p className="text-xs text-blue-600 mb-2">Click to auto-fill credentials:</p>
+            <div className="space-y-1">
+              {DEFAULT_CREDENTIALS.map((cred) => (
+                <button
+                  key={cred.role}
+                  onClick={() => handleQuickLogin(cred)}
+                  className="w-full text-left px-2 py-1 text-xs bg-white border border-blue-100 rounded hover:bg-blue-100 transition-colors"
+                >
+                  <span className="font-semibold">{cred.role}:</span>{' '}
+                  <span className="text-gray-600">{cred.email}</span>{' '}
+                  <span className="text-gray-400">/ {cred.password}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-sm text-red-800">{error}</p>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="Email"
@@ -94,7 +121,7 @@ const Login = () => {
             placeholder="faculty@university.edu"
             required
           />
-          
+
           <Input
             label="Password"
             type="password"
@@ -104,9 +131,9 @@ const Login = () => {
             required
           />
 
-          <Button 
-            type="submit" 
-            variant="primary" 
+          <Button
+            type="submit"
+            variant="primary"
             className="w-full"
             disabled={loading}
           >

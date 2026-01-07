@@ -1,5 +1,8 @@
 // src/features/project-coordinator/services/coordinatorApi.js
 import api from "../../../services/api";
+import demoApi from "../../../shared/utils/demoApi";
+
+const { isDemoMode } = demoApi;
 
 /**
  * Project Coordinator API Service
@@ -9,12 +12,8 @@ import api from "../../../services/api";
 
 // ==================== Data Adapters ====================
 
-/**
- * Adapt backend student data to frontend format
- */
 const adaptStudent = (backendStudent) => {
   if (!backendStudent) return null;
-
   return {
     _id: backendStudent._id,
     regNo: backendStudent.regNo,
@@ -31,12 +30,8 @@ const adaptStudent = (backendStudent) => {
   };
 };
 
-/**
- * Adapt backend faculty data to frontend format
- */
 const adaptFaculty = (backendFaculty) => {
   if (!backendFaculty) return null;
-
   return {
     _id: backendFaculty._id,
     employeeId: backendFaculty.employeeId,
@@ -53,12 +48,8 @@ const adaptFaculty = (backendFaculty) => {
   };
 };
 
-/**
- * Adapt backend project data to frontend format
- */
 const adaptProject = (backendProject) => {
   if (!backendProject) return null;
-
   return {
     _id: backendProject._id,
     name: backendProject.name,
@@ -68,19 +59,18 @@ const adaptProject = (backendProject) => {
     department: backendProject.department,
     academicYear: backendProject.academicYear,
     status: backendProject.status || "active",
-    teamMembers:
-      backendProject.students?.map((s) => ({
-        _id: s._id,
-        regNo: s.regNo,
-        name: s.name,
-        email: s.emailId,
-      })) || [],
+    teamMembers: backendProject.students?.map((s) => ({
+      _id: s._id,
+      regNo: s.regNo,
+      name: s.name,
+      email: s.emailId,
+    })) || [],
     guide: backendProject.guideFaculty
       ? {
-          _id: backendProject.guideFaculty._id,
-          name: backendProject.guideFaculty.name,
-          employeeId: backendProject.guideFaculty.employeeId,
-        }
+        _id: backendProject.guideFaculty._id,
+        name: backendProject.guideFaculty.name,
+        employeeId: backendProject.guideFaculty.employeeId,
+      }
       : null,
     panel: backendProject.panel || null,
     createdAt: backendProject.createdAt,
@@ -88,20 +78,15 @@ const adaptProject = (backendProject) => {
   };
 };
 
-/**
- * Adapt backend panel data to frontend format
- */
 const adaptPanel = (backendPanel) => {
   if (!backendPanel) return null;
-
   return {
     _id: backendPanel._id,
-    members:
-      backendPanel.members?.map((m) => ({
-        _id: m.faculty?._id || m._id,
-        employeeId: m.faculty?.employeeId || m.employeeId,
-        name: m.faculty?.name || m.name,
-      })) || [],
+    members: backendPanel.members?.map((m) => ({
+      _id: m.faculty?._id || m._id,
+      employeeId: m.faculty?.employeeId || m.employeeId,
+      name: m.faculty?.name || m.name,
+    })) || [],
     academicYear: backendPanel.academicYear,
     school: backendPanel.school,
     department: backendPanel.department,
@@ -112,10 +97,8 @@ const adaptPanel = (backendPanel) => {
 
 // ==================== Student Management APIs ====================
 
-/**
- * Fetch students with filters
- */
 export const fetchStudents = async (filters = {}) => {
+  if (isDemoMode()) return demoApi.demoFetchStudents(filters);
   const response = await api.get("/coordinator/students", { params: filters });
   if (response.data.success) {
     return {
@@ -126,10 +109,11 @@ export const fetchStudents = async (filters = {}) => {
   return response.data;
 };
 
-/**
- * Get single student details
- */
 export const fetchStudentDetails = async (regNo) => {
+  if (isDemoMode()) {
+    // Mock detail fetch usually reuses list fetch in demo
+    return { success: false, message: "Detail view not fully mocked" };
+  }
   const response = await api.get(`/coordinator/student/${regNo}`);
   if (response.data.success) {
     return {
@@ -140,44 +124,34 @@ export const fetchStudentDetails = async (regNo) => {
   return response.data;
 };
 
-/**
- * Create a single student
- */
 export const createStudent = async (studentData) => {
+  if (isDemoMode()) return { success: true, message: "Student created (Demo)" };
   const response = await api.post("/coordinator/student", studentData);
   return response.data;
 };
 
-/**
- * Bulk upload students
- */
 export const bulkUploadStudents = async (students) => {
+  if (isDemoMode()) return { success: true, message: `Uploaded ${students.length} students (Demo)` };
   const response = await api.post("/coordinator/student/bulk", { students });
   return response.data;
 };
 
-/**
- * Update student
- */
 export const updateStudent = async (regNo, data) => {
+  if (isDemoMode()) return { success: true, message: "Student updated (Demo)" };
   const response = await api.put(`/coordinator/student/${regNo}`, data);
   return response.data;
 };
 
-/**
- * Delete student
- */
 export const deleteStudent = async (regNo) => {
+  if (isDemoMode()) return { success: true, message: "Student deleted (Demo)" };
   const response = await api.delete(`/coordinator/student/${regNo}`);
   return response.data;
 };
 
 // ==================== Faculty Management APIs ====================
 
-/**
- * Fetch faculty with filters
- */
 export const fetchFaculty = async (filters = {}) => {
+  if (isDemoMode()) return demoApi.demoFetchFaculty(filters);
   const response = await api.get("/coordinator/faculty", { params: filters });
   if (response.data.success) {
     return {
@@ -188,46 +162,34 @@ export const fetchFaculty = async (filters = {}) => {
   return response.data;
 };
 
-/**
- * Create a single faculty
- */
 export const createFaculty = async (facultyData) => {
+  if (isDemoMode()) return { success: true, message: "Faculty created (Demo)" };
   const response = await api.post("/coordinator/faculty", facultyData);
   return response.data;
 };
 
-/**
- * Bulk create faculty
- */
 export const bulkCreateFaculty = async (facultyList) => {
-  const response = await api.post("/coordinator/faculty/bulk", {
-    faculty: facultyList,
-  });
+  if (isDemoMode()) return { success: true, message: "Faculty bulk created (Demo)" };
+  const response = await api.post("/coordinator/faculty/bulk", { faculty: facultyList });
   return response.data;
 };
 
-/**
- * Update faculty
- */
 export const updateFaculty = async (employeeId, data) => {
+  if (isDemoMode()) return { success: true, message: "Faculty updated (Demo)" };
   const response = await api.put(`/coordinator/faculty/${employeeId}`, data);
   return response.data;
 };
 
-/**
- * Delete faculty
- */
 export const deleteFaculty = async (employeeId) => {
+  if (isDemoMode()) return { success: true, message: "Faculty deleted (Demo)" };
   const response = await api.delete(`/coordinator/faculty/${employeeId}`);
   return response.data;
 };
 
 // ==================== Project Management APIs ====================
 
-/**
- * Fetch projects with filters
- */
 export const fetchProjects = async (filters = {}) => {
+  if (isDemoMode()) return demoApi.demoFetchProjects(filters);
   const response = await api.get("/coordinator/projects", { params: filters });
   if (response.data.success) {
     return {
@@ -238,10 +200,8 @@ export const fetchProjects = async (filters = {}) => {
   return response.data;
 };
 
-/**
- * Create a single project
- */
 export const createProject = async (projectData) => {
+  if (isDemoMode()) return { success: true, message: "Project created (Demo)" };
   const payload = {
     name: projectData.name,
     students: projectData.teamMembers || [],
@@ -252,15 +212,12 @@ export const createProject = async (projectData) => {
     department: projectData.department,
     academicYear: projectData.academicYear,
   };
-
   const response = await api.post("/coordinator/projects", payload);
   return response.data;
 };
 
-/**
- * Bulk create projects
- */
 export const bulkCreateProjects = async (projectsList) => {
+  if (isDemoMode()) return { success: true, message: "Projects bulk created (Demo)" };
   const projects = projectsList.map((project) => ({
     name: project.name,
     students: project.teamMembers || [],
@@ -271,25 +228,20 @@ export const bulkCreateProjects = async (projectsList) => {
     department: project.department,
     academicYear: project.academicYear,
   }));
-
   const response = await api.post("/coordinator/projects/bulk", { projects });
   return response.data;
 };
 
-/**
- * Get project marks
- */
 export const fetchProjectMarks = async (projectId) => {
+  if (isDemoMode()) return { success: true, marks: [] };
   const response = await api.get(`/coordinator/projects/${projectId}/marks`);
   return response.data;
 };
 
 // ==================== Panel Management APIs ====================
 
-/**
- * Fetch panels with filters
- */
 export const fetchPanels = async (filters = {}) => {
+  if (isDemoMode()) return demoApi.demoFetchPanels(filters);
   const response = await api.get("/coordinator/panels", { params: filters });
   if (response.data.success) {
     return {
@@ -300,77 +252,55 @@ export const fetchPanels = async (filters = {}) => {
   return response.data;
 };
 
-/**
- * Create panel
- */
 export const createPanel = async (panelData) => {
+  if (isDemoMode()) return { success: true, message: "Panel created (Demo)" };
   const response = await api.post("/coordinator/panels", panelData);
   return response.data;
 };
 
-/**
- * Bulk create panels
- */
 export const bulkCreatePanels = async (panelsList) => {
-  const response = await api.post("/coordinator/panels/bulk", {
-    panels: panelsList,
-  });
+  if (isDemoMode()) return { success: true, message: "Panels bulk created (Demo)" };
+  const response = await api.post("/coordinator/panels/bulk", { panels: panelsList });
   return response.data;
 };
 
-/**
- * Auto create panels
- */
 export const autoCreatePanels = async (data) => {
+  if (isDemoMode()) return { success: true, message: "Auto-create simulation completed" };
   const response = await api.post("/coordinator/panels/auto-create", data);
   return response.data;
 };
 
-/**
- * Assign panel to project
- */
 export const assignPanelToProject = async ({ projectId, panelId }) => {
-  const response = await api.post("/coordinator/projects/assign-panel", {
-    projectId,
-    panelId,
-  });
+  if (isDemoMode()) return { success: true, message: "Panel assigned (Demo)" };
+  const response = await api.post("/coordinator/projects/assign-panel", { projectId, panelId });
   return response.data;
 };
 
-/**
- * Auto assign panels to projects
- */
 export const autoAssignPanels = async (filters) => {
+  if (isDemoMode()) return { success: true, message: "Auto-assign properties simulated" };
   const response = await api.post("/coordinator/panels/auto-assign", filters);
   return response.data;
 };
 
-/**
- * Fetch panel summary statistics
- */
 export const fetchPanelSummary = async (filters = {}) => {
-  const response = await api.get("/coordinator/panels/summary", {
-    params: filters,
-  });
+  if (isDemoMode()) return demoApi.demoFetchPanelSummary(filters);
+  const response = await api.get("/coordinator/panels/summary", { params: filters });
   return response.data;
 };
 
-/**
- * Fetch details for multiple faculty members
- */
 export const fetchFacultyDetailsBulk = async (employeeIds) => {
-  const response = await api.post("/coordinator/faculty/details-bulk", {
-    employeeIds,
-  });
+  if (isDemoMode()) return { success: true, data: [] }; // difficult to mock without more logic
+  const response = await api.post("/coordinator/faculty/details-bulk", { employeeIds });
   return response.data;
 };
 
 // ==================== Request Management APIs ====================
 
-/**
- * Fetch requests with filters
- */
 export const fetchRequests = async (filters = {}) => {
+  if (isDemoMode()) return demoApi.demoFetchAccessRequests(filters); // Using access requests as placeholder or faculty requests
+  // Actually coordinator/requests probably returns faculty requests TO the coordinator
+  if (isDemoMode()) return demoApi.demoFetchFacultyRequests(filters);
+
   const response = await api.get("/coordinator/requests", { params: filters });
   if (response.data.success) {
     return {
@@ -381,10 +311,8 @@ export const fetchRequests = async (filters = {}) => {
   return response.data;
 };
 
-/**
- * Approve request
- */
 export const approveRequest = async (requestId, remarks = "") => {
+  if (isDemoMode()) return { success: true, message: "Request approved (Demo)" };
   const response = await api.put(`/coordinator/requests/${requestId}/status`, {
     status: "approved",
     remarks,
@@ -392,10 +320,8 @@ export const approveRequest = async (requestId, remarks = "") => {
   return response.data;
 };
 
-/**
- * Reject request
- */
 export const rejectRequest = async (requestId, remarks = "") => {
+  if (isDemoMode()) return { success: true, message: "Request rejected (Demo)" };
   const response = await api.put(`/coordinator/requests/${requestId}/status`, {
     status: "rejected",
     remarks,
@@ -403,10 +329,8 @@ export const rejectRequest = async (requestId, remarks = "") => {
   return response.data;
 };
 
-/**
- * Approve multiple requests
- */
 export const approveMultipleRequests = async (requestIds, remarks = "") => {
+  if (isDemoMode()) return { success: true, message: "Requests approved (Demo)" };
   const response = await api.post("/coordinator/requests/approve-multiple", {
     requestIds,
     remarks,
@@ -416,62 +340,47 @@ export const approveMultipleRequests = async (requestIds, remarks = "") => {
 
 // ==================== Master Data APIs ====================
 
-/**
- * Get academic years
- */
 export const fetchAcademicYears = async () => {
+  if (isDemoMode()) return demoApi.demoFetchAcademicYears();
   const response = await api.get("/coordinator/academic-years");
   return response.data;
 };
 
-/**
- * Get departments
- */
 export const fetchDepartments = async () => {
+  if (isDemoMode()) return { success: true, data: ["CSE", "IT", "ECE"] }; // simple mock
   const response = await api.get("/coordinator/departments");
   return response.data;
 };
 
-/**
- * Request access to features
- */
 export const requestAccess = async (data) => {
+  if (isDemoMode()) return { success: true, message: "Access requested (Demo)" };
   const response = await api.post("/coordinator/request-access", data);
   return response.data;
 };
 
-/**
- * Get coordinator permissions
- */
 export const fetchPermissions = async () => {
+  if (isDemoMode()) return demoApi.demoFetchPermissions();
   const response = await api.get("/coordinator/permissions");
   return response.data;
 };
 
 // Export all functions
 export default {
-  // Students
   fetchStudents,
   fetchStudentDetails,
   createStudent,
   bulkUploadStudents,
   updateStudent,
   deleteStudent,
-
-  // Faculty
   fetchFaculty,
   createFaculty,
   bulkCreateFaculty,
   updateFaculty,
   deleteFaculty,
-
-  // Projects
   fetchProjects,
   createProject,
   bulkCreateProjects,
   fetchProjectMarks,
-
-  // Panels
   fetchPanels,
   createPanel,
   bulkCreatePanels,
@@ -480,14 +389,10 @@ export default {
   autoAssignPanels,
   fetchPanelSummary,
   fetchFacultyDetailsBulk,
-
-  // Requests
   fetchRequests,
   approveRequest,
   rejectRequest,
   approveMultipleRequests,
-
-  // Master Data
   fetchAcademicYears,
   fetchDepartments,
   requestAccess,
