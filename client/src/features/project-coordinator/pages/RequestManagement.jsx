@@ -1,5 +1,5 @@
 // src/features/project-coordinator/pages/RequestManagement.jsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Navbar from "../../../shared/components/Navbar";
 import CoordinatorTabs from "../components/shared/CoordinatorTabs";
 import AcademicFilterSelector from "../components/shared/AcademicFilterSelector";
@@ -336,15 +336,62 @@ const FacultyGroup = ({
 
       {/* Request List */}
       {isExpanded && (
-        <div className="p-6 space-y-4">
-          {requests.map((request) => (
-            <RequestItem
-              key={request._id}
-              request={request}
-              onApprove={onApprove}
-              onReject={onReject}
-            />
-          ))}
+        <div className="p-6">
+          {(() => {
+            const pendingRequests = requests.filter(
+              (r) => r.status === "pending"
+            );
+            const completedRequests = requests.filter(
+              (r) => r.status !== "pending"
+            );
+
+            return (
+              <>
+                {/* Pending Requests */}
+                {pendingRequests.length > 0 && (
+                  <div className="space-y-4">
+                    {pendingRequests.map((request) => (
+                      <RequestItem
+                        key={request._id}
+                        request={request}
+                        onApprove={onApprove}
+                        onReject={onReject}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Separator and Completed Requests */}
+                {pendingRequests.length > 0 && completedRequests.length > 0 && (
+                  <div className="my-6 border-t border-gray-200 pt-6">
+                    <h4 className="text-sm font-medium text-gray-500 mb-4 flex items-center gap-2">
+                      <CheckCircleIcon className="h-4 w-4" />
+                      Completed Requests
+                    </h4>
+                  </div>
+                )}
+
+                {/* Completed Requests */}
+                {completedRequests.length > 0 && (
+                  <div
+                    className={`space-y-4 opacity-75 ${
+                      pendingRequests.length > 0 ? "" : "mt-0"
+                    }`}
+                  >
+                    {completedRequests.map((request) => (
+                      <div key={request._id} className="bg-gray-50 rounded-lg">
+                        <RequestItem
+                          request={request}
+                          onApprove={onApprove}
+                          onReject={onReject}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
     </Card>
@@ -375,16 +422,11 @@ const RequestManagement = () => {
     reason: "",
   });
 
-  // Load requests when academic context is available
-  useEffect(() => {
-    if (academicContext && user?.school && user?.department) {
-      loadRequests();
-    }
-  }, [academicContext, user]);
-
-  const loadRequests = async () => {
+  // Function to load requests
+  const loadRequests = useCallback(async () => {
     try {
       setLoading(true);
+
       const response = await fetchRequests({
         school: user.school,
         department: user.department,
@@ -403,9 +445,40 @@ const RequestManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    user?.school,
+    user?.department,
+    academicContext?.year,
+    filters,
+    showToast,
+  ]);
 
-  // Group requests by faculty
+  // Load requests when academic context or filters change
+  useEffect(() => {
+    if (academicContext && user?.school && user?.department) {
+      loadRequests();
+    }
+  }, [academicContext, user?.school, user?.department, loadRequests]);
+
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <CoordinatorTabs />
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <Card>
+            <div className="p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-lg text-gray-600">Loading user data...</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Group requests by faculty and sort by status (pending first, then approved/rejected)
   const facultyGroups = useMemo(() => {
     const grouped = {};
 
@@ -423,30 +496,21 @@ const RequestManagement = () => {
       grouped[facultyId].requests.push(request);
     });
 
+    // Sort requests within each faculty group: pending first, then approved/rejected
+    Object.values(grouped).forEach((group) => {
+      group.requests.sort((a, b) => {
+        if (a.status === "pending" && b.status !== "pending") return -1;
+        if (a.status !== "pending" && b.status === "pending") return 1;
+        // Within same status, sort by creation date (newest first)
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+    });
+
     return Object.values(grouped);
   }, [requests]);
 
-  // Apply filters
-  const filteredGroups = useMemo(() => {
-    if (!filters.status && !filters.requestType) {
-      return facultyGroups;
-    }
-
-    return facultyGroups
-      .map((group) => ({
-        ...group,
-        requests: group.requests.filter((request) => {
-          if (filters.status && request.status !== filters.status) return false;
-          if (
-            filters.requestType &&
-            request.requestType !== filters.requestType
-          )
-            return false;
-          return true;
-        }),
-      }))
-      .filter((group) => group.requests.length > 0);
-  }, [facultyGroups, filters]);
+  // Since filters are now applied at API level, just use facultyGroups directly
+  const filteredGroups = facultyGroups;
 
   // Statistics
   const stats = useMemo(() => {

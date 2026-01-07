@@ -1,23 +1,28 @@
 // src/features/admin/components/request-management/requests/FacultyRequestCard.jsx
-import React, { useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, UserIcon } from '@heroicons/react/24/outline';
-import Card from '../../../../../shared/components/Card';
-import Badge from '../../../../../shared/components/Badge';
-import Button from '../../../../../shared/components/Button';
-import RequestItem from './RequestItem';
+import React, { useState } from "react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  UserIcon,
+  CheckCircleIcon,
+} from "@heroicons/react/24/outline";
+import Card from "../../../../../shared/components/Card";
+import Badge from "../../../../../shared/components/Badge";
+import Button from "../../../../../shared/components/Button";
+import RequestItem from "./RequestItem";
 
-const FacultyRequestCard = ({ 
-  faculty, 
-  requests, 
-  onApproveRequest, 
+const FacultyRequestCard = ({
+  faculty,
+  requests,
+  onApproveRequest,
   onRejectRequest,
-  onApproveAll 
+  onApproveAll,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const pendingCount = requests.filter(r => r.status === 'pending').length;
-  const approvedCount = requests.filter(r => r.status === 'approved').length;
-  const rejectedCount = requests.filter(r => r.status === 'rejected').length;
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const approvedCount = requests.filter((r) => r.status === "approved").length;
+  const rejectedCount = requests.filter((r) => r.status === "rejected").length;
 
   return (
     <Card className="mb-4">
@@ -36,10 +41,10 @@ const FacultyRequestCard = ({
                 <Badge variant="secondary">{faculty.school}</Badge>
                 <Badge variant="secondary">{faculty.program}</Badge>
                 <span className="text-sm text-gray-600">
-                  {requests.length} request{requests.length !== 1 ? 's' : ''}
+                  {requests.length} request{requests.length !== 1 ? "s" : ""}
                 </span>
               </div>
-              
+
               {/* Status Summary */}
               <div className="flex items-center gap-3 mt-2">
                 {pendingCount > 0 && (
@@ -87,15 +92,63 @@ const FacultyRequestCard = ({
 
         {/* Expanded Request List */}
         {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
-            {requests.map((request) => (
-              <RequestItem
-                key={request.id}
-                request={request}
-                onApprove={onApproveRequest}
-                onReject={onRejectRequest}
-              />
-            ))}
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            {(() => {
+              const pendingRequests = requests.filter(
+                (r) => r.status === "pending"
+              );
+              const completedRequests = requests.filter(
+                (r) => r.status !== "pending"
+              );
+
+              return (
+                <>
+                  {/* Pending Requests */}
+                  {pendingRequests.length > 0 && (
+                    <div className="space-y-3">
+                      {pendingRequests.map((request) => (
+                        <RequestItem
+                          key={request.id}
+                          request={request}
+                          onApprove={onApproveRequest}
+                          onReject={onRejectRequest}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Separator and Completed Requests */}
+                  {pendingRequests.length > 0 &&
+                    completedRequests.length > 0 && (
+                      <div className="my-4 pt-4 border-t border-gray-100">
+                        <h5 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
+                          <CheckCircleIcon className="h-4 w-4" />
+                          Completed Requests
+                        </h5>
+                      </div>
+                    )}
+
+                  {/* Completed Requests */}
+                  {completedRequests.length > 0 && (
+                    <div
+                      className={`space-y-3 opacity-75 ${
+                        pendingRequests.length > 0 ? "" : "mt-0"
+                      }`}
+                    >
+                      {completedRequests.map((request) => (
+                        <div key={request.id} className="bg-gray-50 rounded-lg">
+                          <RequestItem
+                            request={request}
+                            onApprove={onApproveRequest}
+                            onReject={onRejectRequest}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>

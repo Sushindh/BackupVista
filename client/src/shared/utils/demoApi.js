@@ -426,7 +426,10 @@ export const demoFetchPrograms = async (school) => {
 
 export const demoFetchAcademicYears = async () => {
   await delay();
-  return { success: true, data: DUMMY_MASTER_DATA.academicYears };
+  return {
+    success: true,
+    data: DUMMY_MASTER_DATA.academicYears.map((y) => y.year),
+  };
 };
 
 export const demoFetchSpecializations = async () => {
@@ -588,7 +591,7 @@ export const demoGetGuideProjects = async (
     (p) =>
       p.academicYear === academicYear &&
       p.school === school &&
-      p.program === department
+      (p.program === department || p.department === department)
   ).forEach((project) => {
     const guideId = project.guideFaculty;
     if (!guideProjectsMap[guideId]) {
@@ -596,11 +599,11 @@ export const demoGetGuideProjects = async (
       guideProjectsMap[guideId] = {
         faculty: faculty
           ? {
-              _id: faculty._id,
-              name: faculty.name,
-              employeeId: faculty.employeeId,
-              email: faculty.emailId,
-            }
+            _id: faculty._id,
+            name: faculty.name,
+            employeeId: faculty.employeeId,
+            email: faculty.emailId,
+          }
           : null,
         guidedProjects: [],
       };
@@ -635,16 +638,26 @@ export const demoGetPanelProjects = async (
     (p) =>
       p.academicYear === academicYear &&
       p.school === school &&
-      p.program === department &&
+      (p.program === department || p.department === department) &&
       p.panel
   ).forEach((project) => {
     const panelId = project.panel;
     if (!panelProjectsMap[panelId]) {
       const panel = DUMMY_PANELS.find((pan) => pan._id === panelId);
+
+      // Populate members with full faculty details
+      const populatedMembers = panel?.members?.map(m => {
+        const facultyDetails = DUMMY_FACULTY.find(f => f._id === m.faculty);
+        return {
+          ...m,
+          faculty: facultyDetails || { _id: m.faculty, name: m.name }
+        };
+      }) || [];
+
       panelProjectsMap[panelId] = {
         panelId: panelId,
         panelName: panel?.panelName || `Panel ${panelId}`,
-        members: panel?.members || [],
+        members: populatedMembers,
         projects: [],
       };
     }
@@ -655,6 +668,7 @@ export const demoGetPanelProjects = async (
       students: project.studentDetails || [],
       status: project.status,
       specialization: project.specialization,
+      panelName: panelProjectsMap[panelId].panelName // Ensure each project has panelName for display
     });
   });
 
@@ -671,8 +685,22 @@ export const demoGetPanels = async (academicYear, school, department) => {
     (p) =>
       p.academicYear === academicYear &&
       p.school === school &&
-      p.program === department
-  );
+      (p.program === department || p.department === department)
+  ).map(panel => {
+    // Populate members with full faculty details
+    const populatedMembers = panel.members?.map(m => {
+      const facultyDetails = DUMMY_FACULTY.find(f => f._id === m.faculty);
+      return {
+        ...m,
+        faculty: facultyDetails || { _id: m.faculty, name: m.name }
+      };
+    }) || [];
+
+    return {
+      ...panel,
+      members: populatedMembers
+    };
+  });
 
   return { success: true, data: panels };
 };
