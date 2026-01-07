@@ -58,18 +58,19 @@ const adaptProject = (backendProject) => {
     department: backendProject.department,
     academicYear: backendProject.academicYear,
     status: backendProject.status || "active",
-    teamMembers: backendProject.students?.map((s) => ({
-      _id: s._id,
-      regNo: s.regNo,
-      name: s.name,
-      email: s.emailId,
-    })) || [],
+    teamMembers:
+      backendProject.students?.map((s) => ({
+        _id: s._id,
+        regNo: s.regNo,
+        name: s.name,
+        email: s.emailId,
+      })) || [],
     guide: backendProject.guideFaculty
       ? {
-        _id: backendProject.guideFaculty._id,
-        name: backendProject.guideFaculty.name,
-        employeeId: backendProject.guideFaculty.employeeId,
-      }
+          _id: backendProject.guideFaculty._id,
+          name: backendProject.guideFaculty.name,
+          employeeId: backendProject.guideFaculty.employeeId,
+        }
       : null,
     panel: backendProject.panel || null,
     createdAt: backendProject.createdAt,
@@ -79,19 +80,20 @@ const adaptProject = (backendProject) => {
 
 const adaptPanel = (backendPanel) => {
   if (!backendPanel) return null;
-  const members = backendPanel.members?.map((m) => ({
-    _id: m.faculty?._id || m._id,
-    employeeId: m.faculty?.employeeId || m.employeeId,
-    name: m.faculty?.name || m.name,
-    email: m.faculty?.emailId || m.email,
-  })) || [];
+  const members =
+    backendPanel.members?.map((m) => ({
+      _id: m.faculty?._id || m._id,
+      employeeId: m.faculty?.employeeId || m.employeeId,
+      name: m.faculty?.name || m.name,
+      email: m.faculty?.emailId || m.email,
+    })) || [];
 
   return {
     _id: backendPanel._id,
     id: backendPanel._id, // Ensure id is also present
     members: members,
     faculty: members, // Alias for UI components expecting 'faculty'
-    panelNumber: backendPanel.panelName?.split('-').pop() || backendPanel._id, // Extract number from name
+    panelNumber: backendPanel.panelName?.split("-").pop() || backendPanel._id, // Extract number from name
     panelName: backendPanel.panelName,
     academicYear: backendPanel.academicYear,
     school: backendPanel.school,
@@ -99,7 +101,7 @@ const adaptPanel = (backendPanel) => {
     isActive: backendPanel.isActive !== false,
     assignedProjects: backendPanel.assignedProjects || 0,
     teams: backendPanel.projects || [], // Add projects/teams if available
-    markingStatus: backendPanel.markingStatus || 'none'
+    markingStatus: backendPanel.markingStatus || "none",
   };
 };
 
@@ -139,7 +141,11 @@ export const createStudent = async (studentData) => {
 };
 
 export const bulkUploadStudents = async (students) => {
-  if (isDemoMode()) return { success: true, message: `Uploaded ${students.length} students (Demo)` };
+  if (isDemoMode())
+    return {
+      success: true,
+      message: `Uploaded ${students.length} students (Demo)`,
+    };
   const response = await api.post("/coordinator/student/bulk", { students });
   return response.data;
 };
@@ -177,8 +183,11 @@ export const createFaculty = async (facultyData) => {
 };
 
 export const bulkCreateFaculty = async (facultyList) => {
-  if (isDemoMode()) return { success: true, message: "Faculty bulk created (Demo)" };
-  const response = await api.post("/coordinator/faculty/bulk", { faculty: facultyList });
+  if (isDemoMode())
+    return { success: true, message: "Faculty bulk created (Demo)" };
+  const response = await api.post("/coordinator/faculty/bulk", {
+    faculty: facultyList,
+  });
   return response.data;
 };
 
@@ -225,7 +234,8 @@ export const createProject = async (projectData) => {
 };
 
 export const bulkCreateProjects = async (projectsList) => {
-  if (isDemoMode()) return { success: true, message: "Projects bulk created (Demo)" };
+  if (isDemoMode())
+    return { success: true, message: "Projects bulk created (Demo)" };
   const projects = projectsList.map((project) => ({
     name: project.name,
     students: project.teamMembers || [],
@@ -251,13 +261,13 @@ export const fetchProjectMarks = async (projectId) => {
 export const fetchPanels = async (filters = {}) => {
   try {
     if (isDemoMode()) {
-      console.log('Fetching panels in demo mode');
+      console.log("Fetching panels in demo mode");
       const result = await demoApi.demoFetchPanels(filters);
 
       if (result.success && result.panels) {
         return {
           success: true,
-          panels: result.panels.map(adaptPanel)
+          panels: result.panels.map(adaptPanel),
         };
       }
       return result;
@@ -283,46 +293,56 @@ export const createPanel = async (panelData) => {
 };
 
 export const bulkCreatePanels = async (panelsList) => {
-  if (isDemoMode()) return { success: true, message: "Panels bulk created (Demo)" };
-  const response = await api.post("/coordinator/panels/bulk", { panels: panelsList });
+  if (isDemoMode())
+    return { success: true, message: "Panels bulk created (Demo)" };
+  const response = await api.post("/coordinator/panels/bulk", {
+    panels: panelsList,
+  });
   return response.data;
 };
 
 export const autoCreatePanels = async (data) => {
-  if (isDemoMode()) return { success: true, message: "Auto-create simulation completed" };
+  if (isDemoMode())
+    return { success: true, message: "Auto-create simulation completed" };
   const response = await api.post("/coordinator/panels/auto-create", data);
   return response.data;
 };
 
 export const assignPanelToProject = async ({ projectId, panelId }) => {
   if (isDemoMode()) return { success: true, message: "Panel assigned (Demo)" };
-  const response = await api.post("/coordinator/projects/assign-panel", { projectId, panelId });
+  const response = await api.post("/coordinator/projects/assign-panel", {
+    projectId,
+    panelId,
+  });
   return response.data;
 };
 
 export const autoAssignPanels = async (filters) => {
-  if (isDemoMode()) return { success: true, message: "Auto-assign properties simulated" };
+  if (isDemoMode())
+    return { success: true, message: "Auto-assign properties simulated" };
   const response = await api.post("/coordinator/panels/auto-assign", filters);
   return response.data;
 };
 
 export const fetchPanelSummary = async (filters = {}) => {
   if (isDemoMode()) return demoApi.demoFetchPanelSummary(filters);
-  const response = await api.get("/coordinator/panels/summary", { params: filters });
+  const response = await api.get("/coordinator/panels/summary", {
+    params: filters,
+  });
   return response.data;
 };
 
 export const fetchFacultyDetailsBulk = async (employeeIds) => {
   if (isDemoMode()) return { success: true, data: [] }; // difficult to mock without more logic
-  const response = await api.post("/coordinator/faculty/details-bulk", { employeeIds });
+  const response = await api.post("/coordinator/faculty/details-bulk", {
+    employeeIds,
+  });
   return response.data;
 };
 
 // ==================== Request Management APIs ====================
 
 export const fetchRequests = async (filters = {}) => {
-  if (isDemoMode()) return demoApi.demoFetchAccessRequests(filters); // Using access requests as placeholder or faculty requests
-  // Actually coordinator/requests probably returns faculty requests TO the coordinator
   if (isDemoMode()) return demoApi.demoFetchFacultyRequests(filters);
 
   const response = await api.get("/coordinator/requests", { params: filters });
@@ -336,7 +356,8 @@ export const fetchRequests = async (filters = {}) => {
 };
 
 export const approveRequest = async (requestId, remarks = "") => {
-  if (isDemoMode()) return { success: true, message: "Request approved (Demo)" };
+  if (isDemoMode())
+    return { success: true, message: "Request approved (Demo)" };
   const response = await api.put(`/coordinator/requests/${requestId}/status`, {
     status: "approved",
     remarks,
@@ -345,7 +366,8 @@ export const approveRequest = async (requestId, remarks = "") => {
 };
 
 export const rejectRequest = async (requestId, remarks = "") => {
-  if (isDemoMode()) return { success: true, message: "Request rejected (Demo)" };
+  if (isDemoMode())
+    return { success: true, message: "Request rejected (Demo)" };
   const response = await api.put(`/coordinator/requests/${requestId}/status`, {
     status: "rejected",
     remarks,
@@ -354,7 +376,8 @@ export const rejectRequest = async (requestId, remarks = "") => {
 };
 
 export const approveMultipleRequests = async (requestIds, remarks = "") => {
-  if (isDemoMode()) return { success: true, message: "Requests approved (Demo)" };
+  if (isDemoMode())
+    return { success: true, message: "Requests approved (Demo)" };
   const response = await api.post("/coordinator/requests/approve-multiple", {
     requestIds,
     remarks,
@@ -377,7 +400,8 @@ export const fetchDepartments = async () => {
 };
 
 export const requestAccess = async (data) => {
-  if (isDemoMode()) return { success: true, message: "Access requested (Demo)" };
+  if (isDemoMode())
+    return { success: true, message: "Access requested (Demo)" };
   const response = await api.post("/coordinator/request-access", data);
   return response.data;
 };

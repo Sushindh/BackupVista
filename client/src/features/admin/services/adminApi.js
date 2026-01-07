@@ -1,5 +1,7 @@
 // src/features/admin/services/adminApi.js
 import api from "../../../services/api";
+import * as demoApi from "../../../shared/utils/demoApi";
+import { isDemoMode } from "../../../shared/utils/demoApi";
 import {
   MOCK_MASTER_DATA,
   MOCK_FACULTY,
@@ -10,10 +12,10 @@ import {
   MOCK_BROADCASTS,
   MOCK_REPORTS,
   MOCK_DEPT_CONFIG,
-  MOCK_MARKING_SCHEMA
+  MOCK_MARKING_SCHEMA,
 } from "../../../shared/utils/largeMockData";
 
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false; // Deprecated - use isDemoMode() instead
 
 /**
  * Admin API Service
@@ -76,14 +78,14 @@ const adaptStudent = (backendStudent, project = null) => {
     // Team members (other students)
     adapted.teammates = project.students
       ? project.students
-        .filter((s) => s._id?.toString() !== backendStudent._id?.toString())
-        .map((s) => ({
-          _id: s._id,
-          id: s._id,
-          name: s.name,
-          regNo: s.regNo,
-          email: s.emailId,
-        }))
+          .filter((s) => s._id?.toString() !== backendStudent._id?.toString())
+          .map((s) => ({
+            _id: s._id,
+            id: s._id,
+            name: s.name,
+            regNo: s.regNo,
+            email: s.emailId,
+          }))
       : [];
 
     adapted.teamSize = project.teamSize || adapted.teammates.length + 1;
@@ -95,8 +97,8 @@ const adaptStudent = (backendStudent, project = null) => {
     adapted.pptStatus = pptApproval.approved
       ? "approved"
       : pptApproval.locked
-        ? "rejected"
-        : "pending";
+      ? "rejected"
+      : "pending";
     adapted.pptApprovedAt = pptApproval.approvedAt;
   } else {
     adapted.pptStatus = "pending";
@@ -183,14 +185,14 @@ const adaptProject = (backendProject) => {
     bestProject: backendProject.bestProject || false,
     guide: backendProject.guideFaculty
       ? {
-        _id:
-          typeof backendProject.guideFaculty === "object"
-            ? backendProject.guideFaculty._id
-            : backendProject.guideFaculty,
-        name: backendProject.guideFaculty?.name || "Not Assigned",
-        employeeId: backendProject.guideFaculty?.employeeId || "",
-        email: backendProject.guideFaculty?.emailId || "",
-      }
+          _id:
+            typeof backendProject.guideFaculty === "object"
+              ? backendProject.guideFaculty._id
+              : backendProject.guideFaculty,
+          name: backendProject.guideFaculty?.name || "Not Assigned",
+          employeeId: backendProject.guideFaculty?.employeeId || "",
+          email: backendProject.guideFaculty?.emailId || "",
+        }
       : null,
     guideId:
       typeof backendProject.guideFaculty === "object"
@@ -213,7 +215,8 @@ const adaptProject = (backendProject) => {
  * Fetch all master data (schools, departments, academic years)
  */
 export const fetchMasterData = async () => {
-  if (USE_MOCK_DATA) return { success: true, data: MOCK_MASTER_DATA };
+  if (isDemoMode() || USE_MOCK_DATA)
+    return { success: true, data: MOCK_MASTER_DATA };
   const response = await api.get("/admin/master-data");
   return response.data;
 };
@@ -361,11 +364,11 @@ export const fetchStudents = async (filters = {}) => {
  */
 export const fetchStudentDetails = async (regNo) => {
   if (USE_MOCK_DATA) {
-    const student = MOCK_STUDENTS.find(s => s.regNo === regNo);
+    const student = MOCK_STUDENTS.find((s) => s.regNo === regNo);
     return {
       success: !!student,
       student: student || null,
-      message: student ? undefined : "Student not found"
+      message: student ? undefined : "Student not found",
     };
   }
   const response = await api.get(`/admin/student/${regNo}`);
@@ -437,7 +440,7 @@ export const fetchFaculty = async (filters = {}) => {
     return {
       success: true,
       count: MOCK_FACULTY.length,
-      faculty: MOCK_FACULTY
+      faculty: MOCK_FACULTY,
     };
   }
   const response = await api.get("/admin/faculty", { params: filters });
@@ -492,7 +495,7 @@ export const fetchPanels = async (filters = {}) => {
   if (USE_MOCK_DATA) {
     return {
       success: true,
-      panels: MOCK_PANELS
+      panels: MOCK_PANELS,
     };
   }
   const response = await api.get("/admin/panels", { params: filters });
@@ -573,7 +576,7 @@ export const fetchProjects = async (filters = {}) => {
   if (USE_MOCK_DATA) {
     return {
       success: true,
-      projects: MOCK_PROJECTS
+      projects: MOCK_PROJECTS,
     };
   }
   const response = await api.get("/admin/projects", { params: filters });
@@ -712,8 +715,39 @@ export const fetchProjectMarks = async (projectId) => {
 /**
  * Fetch all faculty requests
  */
+// Transform faculty requests to admin component structure
+const adaptFacultyRequestsForAdmin = (facultyRequests) => {
+  return facultyRequests.map((req) => ({
+    id: req._id,
+    facultyId: req.faculty || req.facultyId,
+    facultyName: req.facultyName,
+    studentName: req.studentName,
+    category: req.requestType, // Map requestType to category
+    projectTitle: req.projectName,
+    message: req.reason,
+    status: req.status,
+    date: req.createdAt,
+    school: req.school,
+    program: req.program,
+    approvalReason: req.approvalReason,
+    rejectionReason: req.rejectionReason,
+  }));
+};
+
 export const fetchRequests = async (filters = {}) => {
-  if (USE_MOCK_DATA) return { success: true, count: MOCK_REQUESTS.length, data: MOCK_REQUESTS }; // Adjust based on expected structure
+  if (isDemoMode()) {
+    const response = await demoApi.demoFetchFacultyRequests(filters);
+    if (response.success) {
+      const adaptedData = adaptFacultyRequestsForAdmin(response.requests || []);
+      return {
+        success: true,
+        data: adaptedData,
+      };
+    }
+    return response;
+  }
+  if (USE_MOCK_DATA)
+    return { success: true, count: MOCK_REQUESTS.length, data: MOCK_REQUESTS }; // Adjust based on expected structure
   const response = await api.get("/admin/requests", { params: filters });
   return response.data;
 };
@@ -727,6 +761,8 @@ export const updateRequestStatus = async (
   remarks = "",
   newDeadline = null
 ) => {
+  if (isDemoMode())
+    return { success: true, message: `Request ${status} (Demo)` };
   const response = await api.put(`/admin/requests/${requestId}/status`, {
     status,
     remarks,
@@ -741,7 +777,12 @@ export const updateRequestStatus = async (
  * Fetch broadcast messages
  */
 export const fetchBroadcasts = async (filters = {}) => {
-  if (USE_MOCK_DATA) return { success: true, count: MOCK_BROADCASTS.length, data: MOCK_BROADCASTS };
+  if (USE_MOCK_DATA)
+    return {
+      success: true,
+      count: MOCK_BROADCASTS.length,
+      data: MOCK_BROADCASTS,
+    };
   const response = await api.get("/admin/broadcasts", { params: filters });
   return response.data;
 };
@@ -823,7 +864,8 @@ export const fetchFacultyWorkloadReport = async (
   school,
   department
 ) => {
-  if (USE_MOCK_DATA) return { success: true, data: MOCK_REPORTS.facultyWorkload };
+  if (USE_MOCK_DATA)
+    return { success: true, data: MOCK_REPORTS.facultyWorkload };
   const response = await api.get("/admin/reports/faculty-workload", {
     params: { academicYear, school, department },
   });
@@ -838,7 +880,8 @@ export const fetchStudentPerformanceReport = async (
   school,
   department
 ) => {
-  if (USE_MOCK_DATA) return { success: true, data: MOCK_REPORTS.studentPerformance };
+  if (USE_MOCK_DATA)
+    return { success: true, data: MOCK_REPORTS.studentPerformance };
   const response = await api.get("/admin/reports/student-performance", {
     params: { academicYear, school, department },
   });
@@ -851,7 +894,11 @@ export const fetchStudentPerformanceReport = async (
  * Get all project coordinators
  */
 export const fetchProjectCoordinators = async (filters = {}) => {
-  if (USE_MOCK_DATA) return { success: true, data: MOCK_FACULTY.filter(f => f.isProjectCoordinator) };
+  if (USE_MOCK_DATA)
+    return {
+      success: true,
+      data: MOCK_FACULTY.filter((f) => f.isProjectCoordinator),
+    };
   const response = await api.get("/admin/project-coordinators", {
     params: filters,
   });

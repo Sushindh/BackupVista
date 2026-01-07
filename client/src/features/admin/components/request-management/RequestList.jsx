@@ -1,30 +1,27 @@
 // src/features/admin/components/request-management/RequestList.jsx
-import React, { useState, useMemo } from 'react';
-import Card from '../../../../shared/components/Card';
-import Button from '../../../../shared/components/Button';
-import Modal from '../../../../shared/components/Modal';
-import { useToast } from '../../../../shared/hooks/useToast';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
-import RequestFilters from './requests/RequestFilters';
-import FacultyRequestCard from './requests/FacultyRequestCard';
-import { 
-  groupRequestsByFaculty, 
-  applyFilters 
-} from './requests/requestUtils';
+import React, { useState, useMemo } from "react";
+import Card from "../../../../shared/components/Card";
+import Button from "../../../../shared/components/Button";
+import Modal from "../../../../shared/components/Modal";
+import { useToast } from "../../../../shared/hooks/useToast";
+import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import RequestFilters from "./requests/RequestFilters";
+import FacultyRequestCard from "./requests/FacultyRequestCard";
+import { groupRequestsByFaculty, applyFilters } from "./requests/requestUtils";
 import {
   fetchRequests as apiFetchRequests,
-  updateRequestStatus as apiUpdateRequestStatus
-} from '../../services/adminApi';
+  updateRequestStatus as apiUpdateRequestStatus,
+} from "../../services/adminApi";
 
 const RequestList = () => {
   const { showToast } = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    school: '',
-    program: '',
-    category: '',
-    status: ''
+    school: "",
+    program: "",
+    requestType: "",
+    status: "",
   });
 
   // Fetch requests on mount
@@ -32,27 +29,30 @@ const RequestList = () => {
     const loadRequests = async () => {
       try {
         setLoading(true);
-        const response = await apiFetchRequests();
-        
+        const response = await apiFetchRequests(filters);
+
         if (response.success) {
-          setRequests(response.data || []);
+          setRequests(response.requests || response.data || []);
         } else {
-          showToast(response.message || 'Failed to load requests', 'error');
+          showToast(response.message || "Failed to load requests", "error");
         }
       } catch (error) {
-        console.error('Error fetching requests:', error);
-        showToast(error.response?.data?.message || 'Failed to load requests', 'error');
+        console.error("Error fetching requests:", error);
+        showToast(
+          error.response?.data?.message || "Failed to load requests",
+          "error"
+        );
       } finally {
         setLoading(false);
       }
     };
 
     loadRequests();
-  }, [showToast]);
-  
+  }, [showToast, filters]);
+
   const [showApproveAllModal, setShowApproveAllModal] = useState(false);
   const [selectedFacultyId, setSelectedFacultyId] = useState(null);
-  const [approvalReason, setApprovalReason] = useState('');
+  const [approvalReason, setApprovalReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Apply filters and group by faculty
@@ -65,62 +65,80 @@ const RequestList = () => {
   }, [filteredRequests]);
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleResetFilters = () => {
     setFilters({
-      school: '',
-      program: '',
-      category: '',
-      status: ''
+      school: "",
+      program: "",
+      requestType: "",
+      status: "",
     });
   };
 
   const handleApproveRequest = async (requestId) => {
     try {
-      const response = await apiUpdateRequestStatus(requestId, 'approved', 'Approved by admin');
-      
+      const response = await apiUpdateRequestStatus(
+        requestId,
+        "approved",
+        "Approved by admin"
+      );
+
       if (response.success) {
-        setRequests(prevRequests =>
-          prevRequests.map(request =>
+        setRequests((prevRequests) =>
+          prevRequests.map((request) =>
             request.id === requestId || request._id === requestId
-              ? { ...request, status: 'approved', approvalReason: 'Approved by admin' }
+              ? {
+                  ...request,
+                  status: "approved",
+                  approvalReason: "Approved by admin",
+                }
               : request
           )
         );
-        showToast('Request approved successfully', 'success');
+        showToast("Request approved successfully", "success");
       } else {
-        showToast(response.message || 'Failed to approve request', 'error');
+        showToast(response.message || "Failed to approve request", "error");
       }
     } catch (error) {
-      console.error('Error approving request:', error);
-      showToast(error.response?.data?.message || 'Failed to approve request', 'error');
+      console.error("Error approving request:", error);
+      showToast(
+        error.response?.data?.message || "Failed to approve request",
+        "error"
+      );
     }
   };
 
   const handleRejectRequest = async (requestId) => {
-    const reason = window.prompt('Please provide a reason for rejection:');
+    const reason = window.prompt("Please provide a reason for rejection:");
     if (!reason) return;
 
     try {
-      const response = await apiUpdateRequestStatus(requestId, 'rejected', reason);
-      
+      const response = await apiUpdateRequestStatus(
+        requestId,
+        "rejected",
+        reason
+      );
+
       if (response.success) {
-        setRequests(prevRequests =>
-          prevRequests.map(request =>
+        setRequests((prevRequests) =>
+          prevRequests.map((request) =>
             request.id === requestId || request._id === requestId
-              ? { ...request, status: 'rejected', rejectionReason: reason }
+              ? { ...request, status: "rejected", rejectionReason: reason }
               : request
           )
         );
-        showToast('Request rejected', 'success');
+        showToast("Request rejected", "success");
       } else {
-        showToast(response.message || 'Failed to reject request', 'error');
+        showToast(response.message || "Failed to reject request", "error");
       }
     } catch (error) {
-      console.error('Error rejecting request:', error);
-      showToast(error.response?.data?.message || 'Failed to reject request', 'error');
+      console.error("Error rejecting request:", error);
+      showToast(
+        error.response?.data?.message || "Failed to reject request",
+        "error"
+      );
     }
   };
 
@@ -131,54 +149,62 @@ const RequestList = () => {
 
   const handleApproveAllForFaculty = async () => {
     if (!approvalReason.trim()) {
-      showToast('Please provide a reason for approval', 'error');
+      showToast("Please provide a reason for approval", "error");
       return;
     }
 
     setIsProcessing(true);
-    
+
     try {
       // Approve each request individually
-      const requestIds = pendingRequestsForFaculty.map(r => r.id || r._id);
-      const approvePromises = requestIds.map(requestId => 
-        apiUpdateRequestStatus(requestId, 'approved', approvalReason)
+      const requestIds = pendingRequestsForFaculty.map((r) => r.id || r._id);
+      const approvePromises = requestIds.map((requestId) =>
+        apiUpdateRequestStatus(requestId, "approved", approvalReason)
       );
-      
+
       const results = await Promise.allSettled(approvePromises);
-      const successCount = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
-      
+      const successCount = results.filter(
+        (r) => r.status === "fulfilled" && r.value?.success
+      ).length;
+
       if (successCount > 0) {
-        setRequests(prevRequests =>
-          prevRequests.map(request =>
+        setRequests((prevRequests) =>
+          prevRequests.map((request) =>
             requestIds.includes(request.id || request._id)
-              ? { ...request, status: 'approved', approvalReason }
+              ? { ...request, status: "approved", approvalReason }
               : request
           )
         );
-        
-        const faculty = facultyGroups.find(f => f.id === selectedFacultyId);
-        
+
+        const faculty = facultyGroups.find((f) => f.id === selectedFacultyId);
+
         showToast(
-          `Successfully approved ${successCount} request${successCount !== 1 ? 's' : ''} for ${faculty?.name}`,
-          'success'
+          `Successfully approved ${successCount} request${
+            successCount !== 1 ? "s" : ""
+          } for ${faculty?.name}`,
+          "success"
         );
-        
+
         setShowApproveAllModal(false);
         setSelectedFacultyId(null);
-        setApprovalReason('');
+        setApprovalReason("");
       } else {
-        showToast('Failed to approve requests', 'error');
+        showToast("Failed to approve requests", "error");
       }
     } catch (error) {
-      console.error('Error approving requests:', error);
-      showToast(error.response?.data?.message || 'Failed to approve requests', 'error');
+      console.error("Error approving requests:", error);
+      showToast(
+        error.response?.data?.message || "Failed to approve requests",
+        "error"
+      );
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const selectedFaculty = facultyGroups.find(f => f.id === selectedFacultyId);
-  const pendingRequestsForFaculty = selectedFaculty?.requests.filter(r => r.status === 'pending') || [];
+  const selectedFaculty = facultyGroups.find((f) => f.id === selectedFacultyId);
+  const pendingRequestsForFaculty =
+    selectedFaculty?.requests.filter((r) => r.status === "pending") || [];
 
   return (
     <>
@@ -227,20 +253,31 @@ const RequestList = () => {
         onClose={() => {
           setShowApproveAllModal(false);
           setSelectedFacultyId(null);
-          setApprovalReason('');
+          setApprovalReason("");
         }}
         title={`Approve All Requests for ${selectedFaculty?.name}`}
       >
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              You are about to approve <strong>{pendingRequestsForFaculty.length}</strong> pending request{pendingRequestsForFaculty.length !== 1 ? 's' : ''} for <strong>{selectedFaculty?.name}</strong>:
+              You are about to approve{" "}
+              <strong>{pendingRequestsForFaculty.length}</strong> pending
+              request{pendingRequestsForFaculty.length !== 1 ? "s" : ""} for{" "}
+              <strong>{selectedFaculty?.name}</strong>:
             </p>
             <ul className="mt-3 space-y-1 text-sm text-blue-700">
-              {pendingRequestsForFaculty.map(req => (
+              {pendingRequestsForFaculty.map((req) => (
                 <li key={req.id} className="flex items-start gap-2">
                   <CheckCircleIcon className="h-4 w-4 mt-0.5 shrink-0" />
-                  <span>{req.studentName} - {req.category === 'guide' ? 'Guide' : 'Panel'} ({req.projectTitle})</span>
+                  <span>
+                    {req.studentName} -{" "}
+                    {req.category === "deadline_extension"
+                      ? "Deadline Extension"
+                      : req.category === "mark_edit"
+                      ? "Mark Edit"
+                      : "Resubmission"}{" "}
+                    ({req.projectTitle})
+                  </span>
                 </li>
               ))}
             </ul>
@@ -269,7 +306,7 @@ const RequestList = () => {
               onClick={() => {
                 setShowApproveAllModal(false);
                 setSelectedFacultyId(null);
-                setApprovalReason('');
+                setApprovalReason("");
               }}
               disabled={isProcessing}
             >
@@ -280,7 +317,9 @@ const RequestList = () => {
               onClick={handleApproveAllForFaculty}
               disabled={isProcessing || !approvalReason.trim()}
             >
-              {isProcessing ? 'Processing...' : `Approve All ${pendingRequestsForFaculty.length} Requests`}
+              {isProcessing
+                ? "Processing..."
+                : `Approve All ${pendingRequestsForFaculty.length} Requests`}
             </Button>
           </div>
         </div>
