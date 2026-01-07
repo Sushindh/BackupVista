@@ -43,6 +43,179 @@ const PanelViewTab = () => {
     try {
       setLoading(true);
 
+      // DUMMY DATA FOR DEMO
+      const DUMMY_PANELS = [
+        {
+          id: "p1",
+          panelName: "Panel A - AI & ML Specialization",
+          members: [
+            { name: "Dr. Sarah Wilson", employeeId: "FAC001", role: "Chair" },
+            { name: "Prof. James Chen", employeeId: "FAC002", role: "Member" },
+            { name: "Dr. Anita Raj", employeeId: "FAC003", role: "Member" },
+          ],
+          assignedProjects: 5,
+          projects: [
+            {
+              id: "proj1",
+              title: "AI-Based Traffic Management",
+              students: ["20BCE001 - John Doe", "20BCE002 - Jane Smith"],
+              guide: "Dr. Alan Turing",
+            },
+            {
+              id: "proj2",
+              title: "Healthcare Chatbot",
+              students: ["20BCE101 - Bob Brown", "20BCE102 - Alice White"],
+              guide: "Prof. Grace Hopper",
+            },
+            {
+              id: "proj3",
+              title: "Stock Market Prediction",
+              students: ["20BCE201 - Charlie Davis"],
+              guide: "Dr. Sarah Wilson",
+            },
+            {
+              id: "proj4",
+              title: "Face Recognition Attendance",
+              students: ["20BCE301 - Eve Black", "20BCE302 - Adam Green"],
+              guide: "Dr. Anita Raj",
+            },
+            {
+              id: "proj5",
+              title: "Autonomous Drone",
+              students: ["20BCE401 - Frank Wright"],
+              guide: "Prof. James Chen",
+            },
+          ],
+          markingStatus: "full",
+          academicYear: "2023-2024",
+          school: "School of Computer Science and Engineering",
+          program: "Bachelor of Technology",
+        },
+        {
+          id: "p2",
+          panelName: "Panel B - Web Technologies",
+          members: [
+            { name: "Dr. Robert Brown", employeeId: "FAC004", role: "Chair" },
+            { name: "Prof. Emily Davis", employeeId: "FAC005", role: "Member" },
+          ],
+          assignedProjects: 3,
+          projects: [
+            {
+              id: "proj6",
+              title: "E-Commerce Platform",
+              students: ["20BCE501 - George Hall", "20BCE502 - Harry King"],
+              guide: "Dr. Robert Brown",
+            },
+            {
+              id: "proj7",
+              title: "Social Media Dashboard",
+              students: ["20BCE601 - Ian Lewis"],
+              guide: "Prof. Emily Davis",
+            },
+            {
+              id: "proj8",
+              title: "Portfolio Generator",
+              students: ["20BCE701 - Jack Moore", "20BCE702 - Kelly Nelson"],
+              guide: "Dr. Robert Brown",
+            },
+          ],
+          markingStatus: "partial",
+          academicYear: "2023-2024",
+          school: "School of Computer Science and Engineering",
+          program: "Bachelor of Technology",
+        },
+        {
+          id: "p3",
+          panelName: "Panel C - Data Science",
+          members: [
+            { name: "Dr. Michael Chang", employeeId: "FAC006", role: "Chair" },
+            { name: "Prof. Lisa Anderson", employeeId: "FAC007", role: "Member" },
+            { name: "Dr. David Kumar", employeeId: "FAC008", role: "Member" },
+          ],
+          assignedProjects: 0,
+          projects: [],
+          markingStatus: "none",
+          academicYear: "2023-2024",
+          school: "School of Computer Science and Engineering",
+          program: "Bachelor of Technology",
+        },
+        {
+          id: "p4",
+          panelName: "Panel D - Cloud Computing",
+          members: [
+            { name: "Dr. Patricia White", employeeId: "FAC009", role: "Chair" },
+            { name: "Prof. Thomas Green", employeeId: "FAC010", role: "Member" },
+          ],
+          assignedProjects: 4,
+          projects: [
+            {
+              id: "proj9",
+              title: "Cloud File Storage",
+              students: ["20BCE801 - Larry Page"],
+              guide: "Dr. Patricia White",
+            },
+            {
+              id: "proj10",
+              title: "Serverless Chat",
+              students: ["20BCE802 - Sergey Brin"],
+              guide: "Prof. Thomas Green",
+            },
+            {
+              id: "proj11",
+              title: "Distributed Database",
+              students: ["20BCE803 - Elon Musk"],
+              guide: "Dr. Patricia White",
+            },
+            {
+              id: "proj12",
+              title: "Load Balancer Sim",
+              students: ["20BCE804 - Bill Gates"],
+              guide: "Prof. Thomas Green",
+            },
+          ],
+          markingStatus: "full",
+          academicYear: "2023-2024",
+          school: "School of Computer Science and Engineering",
+          program: "Bachelor of Technology",
+        },
+        {
+          id: "p5",
+          panelName: "Panel E - IoT & Embedded Systems",
+          members: [
+            { name: "Dr. Richard Taylor", employeeId: "FAC011", role: "Chair" },
+            { name: "Prof. Susan Martin", employeeId: "FAC012", role: "Member" },
+            { name: "Dr. Kevin Lee", employeeId: "FAC013", role: "Member" },
+          ],
+          assignedProjects: 2,
+          projects: [
+            {
+              id: "proj13",
+              title: "Smart Home System",
+              students: ["20BCE901 - Mark Z"],
+              guide: "Dr. Richard Taylor",
+            },
+            {
+              id: "proj14",
+              title: "Agri-Tech Sensor",
+              students: ["20BCE902 - Steve J"],
+              guide: "Dr. Kevin Lee",
+            },
+          ],
+          markingStatus: "partial",
+          academicYear: "2023-2024",
+          school: "School of Computer Science and Engineering",
+          program: "Bachelor of Technology",
+        },
+      ];
+
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      setPanels(DUMMY_PANELS);
+      showToast("Panels loaded successfully (Demo Data)", "success");
+
+      /* 
+      // Original logic preserved for reference
       const response = await fetchPanels({
         school: filters.school,
         department: filters.department,
@@ -55,6 +228,7 @@ const PanelViewTab = () => {
       } else {
         showToast(response.message || "Failed to load panels", "error");
       }
+      */
     } catch (error) {
       console.error("Error fetching panels:", error);
       showToast(
@@ -213,20 +387,53 @@ const PanelViewTab = () => {
                                 {member.name}
                               </p>
                               <p className="text-xs text-gray-600 mt-1">
-                                {member.employeeId}
+                                {member.employeeId} -{" "}
+                                <span className="text-xs text-blue-600">
+                                  {member.role || "Member"}
+                                </span>
                               </p>
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Note about projects */}
-                      {panel.assignedProjects > 0 && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <p className="text-sm text-blue-800">
-                            This panel has {panel.assignedProjects} project(s)
-                            assigned. View project details in the Project
-                            Management section.
+                      {/* Projects List */}
+                      {panel.projects && panel.projects.length > 0 ? (
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                            <DocumentTextIcon className="w-4 h-4 mr-2" />
+                            Assigned Projects
+                          </h4>
+                          <div className="space-y-3">
+                            {panel.projects.map((proj) => (
+                              <div
+                                key={proj.id}
+                                className="bg-white border border-gray-200 rounded-lg p-3 hover:border-blue-300 transition-colors"
+                              >
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h5 className="text-sm font-semibold text-gray-800">
+                                      {proj.title}
+                                    </h5>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Students: {proj.students.join(", ")}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Guide: {proj.guide}
+                                    </div>
+                                  </div>
+                                  <span className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded-full">
+                                    Project
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 text-center">
+                          <p className="text-sm text-gray-500">
+                            No projects assigned to this panel yet.
                           </p>
                         </div>
                       )}
